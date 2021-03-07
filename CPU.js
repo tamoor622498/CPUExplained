@@ -1,6 +1,7 @@
 // Tamoor H
 // An interactive web cpu.
 
+//Keeps the CPU registers, facilitates read and write.
 class Register_File {
     constructor() {
         this.reg0 = 0x00; //Internal registers
@@ -8,7 +9,7 @@ class Register_File {
         this.reg2 = 0x00;
         this.reg3 = 0x00;
     }
-    
+
     access (wr_address = 0b00, write_data = 0b00000000, write_enable = false, rda_address = 0b00, rdb_address = 0b00) {
         if (write_enable) {
             switch (wr_address) { //If write_enable is true, data is written is to reg based on wr_address
@@ -63,6 +64,26 @@ class Register_File {
     }
 }
 
+//Arithmetic operations.
+class ALU {
+    constructor() {
+        this.carry = 0;
+        this.zero = 0;
+        this.negative = 0;
+    }
+
+    access (opcode = 0b00000000, A = 0b00000000, B = 0b00000000) {
+        switch (true) {//Switch statements compare this value with cases.
+            case (opcode & 0b11110000) === 0b00000000 :
+                console.log("AND");
+                break;
+            case ((opcode & 0b11110000) === 0b00010000) :
+                console.log("OR");
+                break;
+        }
+    }
+}
+
 class CPU {
     constructor() {
         this.regA = 0xFF;
@@ -72,8 +93,6 @@ class CPU {
     }
 }
 
-let t = new Register_File();
+let t = new ALU();
 
-t.access(0b00,0b00000011, true, 0b00, 0b00);
-t.access(0b01,0b00000100, true, 0b00, 0b00);
-console.log(t.access(0x00,0x00000000, false, 0b00, 0b01));
+t.access(0b00011110);
