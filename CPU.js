@@ -25,6 +25,8 @@ class Register_File {
                 case 0b11:
                     this.reg3 = write_data;
                     break;
+                default:
+                    console.log("INVALID REGISTER ADDRESS");
             }
         }
 
@@ -43,6 +45,8 @@ class Register_File {
             case 0b11:
                 toReturn["A"] = this.reg3;
                 break;
+            default:
+                console.log("INVALID RDA ADDRESS");
         }
 
         switch (rdb_address) { //Adds reg rdb data to JSON
@@ -58,6 +62,8 @@ class Register_File {
             case 0b11:
                 toReturn["B"] = this.reg3;
                 break;
+            default:
+                console.log("INVALID RDB ADDRESS");
         }
 
         return toReturn;
@@ -73,14 +79,89 @@ class ALU {
     }
 
     access (opcode = 0b00000000, A = 0b00000000, B = 0b00000000) {
+        let output = {};
+        let msb = 0;
+        let As = 0;
+        let Bs = 0;
+        let R = 0;
+        let Rs = 0;
         switch (true) {//Switch statements compare this value with cases.
-            case (opcode & 0b11110000) === 0b00000000 :
-                console.log("AND");
+            //AND Instruction
+            case (opcode & 0b11110000) === 0b00000000 : //Important part of opcode gotten from bit masking.
+                output["result"] = A & B;
                 break;
-            case ((opcode & 0b11110000) === 0b00010000) :
-                console.log("OR");
+            //OR Instruction
+            case (opcode & 0b11110000) === 0b00010000 :
+                output["result"] = A | B;
+                break;
+            //XOR Instruction
+            case (opcode & 0b11110000) === 0b00100000 :
+                output["result"] = A ^ B;
+                break;
+            //NEG Instruction
+            case (opcode & 0b11110011) === 0b00110000 :
+                output["result"] = (~A + 1) & 0xFF;
+                break;
+            //ADD Instruction
+            case (opcode & 0b11110000) === 0b01000000 :
+                R = (A + B) & 0xFF;
+                As = A.toString(2);//Convert to string
+                Bs = B.toString(2);
+                Rs = R.toString(2);
+                this.carry = (parseInt(As[7]) & parseInt(Bs[7])) | (parseInt(As[7]) & -parseInt(Rs[7])) | (parseInt(Bs[7]) & -parseInt(Rs[7]));//Carry equation from AVR Instruction Set
+                output["result"] = R;
+                break;
+            //ADD with carry Instruction
+            case (opcode & 0b11110000) === 0b01010000 :
+                R = (A + B + this.carry) & 0xFF;
+                As = A.toString(2);//Convert to string
+                Bs = B.toString(2);
+                Rs = R.toString(2);
+                this.carry = (parseInt(As[7]) & parseInt(Bs[7])) | (parseInt(As[7]) & -parseInt(Rs[7])) | (parseInt(Bs[7]) & -parseInt(Rs[7]));//Carry equation from AVR Instruction Set
+                output["result"] = R;
+                break;
+            //SUB Instruction
+            case (opcode & 0b11110000) === 0b01100000 :
+                R = (A - B) & 0xFF;
+                As = A.toString(2);//Convert to string
+                Bs = B.toString(2);
+                Rs = R.toString(2);
+                this.carry = (-parseInt(As[7]) & parseInt(Bs[7])) | (parseInt(Bs[7]) & parseInt(Rs[7])) | (parseInt(Rs[7]) & -parseInt(As[7]));//Carry equation from AVR Instruction Set
+                output["result"] = R;
+                break;
+            //SUB with carry Instruction
+            case (opcode & 0b11110000) === 0b01110000 :
+                R = (A - B - this.carry) & 0xFF;
+                As = A.toString(2);//Convert to string
+                Bs = B.toString(2);
+                Rs = R.toString(2);
+                this.carry = (-parseInt(As[7]) & parseInt(Bs[7])) | (parseInt(Bs[7]) & parseInt(Rs[7])) | (parseInt(Rs[7]) & -parseInt(As[7]));//Carry equation from AVR Instruction Set
+                output["result"] = R;
+                break;
+            //Logical Shift Left Instruction
+            case (opcode & 0b11110011) === 0b10000000 :
+                this.carry = (A & 0x80) >> 7;
+                output["result"] = (A << 1) & 0xFF;
+                break;
+            //Arithmetic Shift Right Instruction
+            case (opcode & 0b11110011) === 0b10000001 :
+                msb = A & 0x80; //Saves the Most Significant Bit.
+                output["result"] = (A >> 1) | msb; //Shifts A right and inserts the saved MSB.
+                break;
+            //Rotate Left through carry Instruction
+            case (opcode & 0b11110011) === 0b10000010 :
+                msb = (A & 0x80) >> 7; //Saves the Most Significant Bit.
+                output["result"] = (((A << 1) | this.carry) & 0xFF) | msb; //Shifts A right and inserts the saved MSB.
+                this.carry = msb;
+                break;
+            //Rotate Right through carry Instruction
+            case (opcode & 0b11110011) === 0b10000011 :
+                output["result"] = (((A >> 1) | this.carry << 7) & 0xFF); //Shifts A right and inserts the saved MSB.
+                this.carry = (A & 0b00000001);
                 break;
         }
+        this.zero = output["result"] === 0x00 ? 1 : 0;
+        this.negative = ((output["result"]).toString(2))[7];
     }
 }
 
@@ -95,4 +176,10 @@ class CPU {
 
 let t = new ALU();
 
-t.access(0b00011110);
+let A = 0b1;
+
+console.log("A:   " + (A << 7).toString(2));
+
+t.access(0b00111100);
+
+
