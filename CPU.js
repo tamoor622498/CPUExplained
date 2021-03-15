@@ -199,7 +199,7 @@ class Instruction_Memory {
     constructor() {
         this.memory = [];
         for (let i = 0; i < 256; i++) {
-            this.memory.push(i);
+            this.memory.push(0xFF);
         }
     }
 
@@ -220,4 +220,33 @@ class CPU {
         this.Reg_File = new Register_File();
         console.log(this.Reg_File.x);
     }
+}
+
+let IM = new Instruction_Memory();
+
+document.getElementById("myBtn").onclick = function () {
+
+    let x = document.getElementById("textarea").value;
+
+    let y = x.split("\n");
+    document.getElementById("textarea2").value = "";
+    let z = 0;
+    for (let i = 0; i < y.length; i++) {
+        z = y[i].split(" ");
+
+        let g = 0;
+        while (g < z.length) {
+            if (z[g] === String.fromCharCode(32)) {
+                z.splice(g,1);
+            } else {
+                g++;
+            }
+        }
+
+        for (let j = 0; j < z.length; j++) {
+            document.getElementById("textarea2").value += "> " + z[j] + "\n";
+        }
+
+    }
+
 }
