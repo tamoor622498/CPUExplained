@@ -159,11 +159,59 @@ class ALU {
                 output["result"] = (((A >> 1) | this.carry << 7) & 0xFF); //Shifts A right and inserts the saved MSB.
                 this.carry = (A & 0b00000001);
                 break;
+            default :
+                console.log("INVALID OPCODE");
         }
         this.zero = output["result"] === 0x00 ? 1 : 0;
         this.negative = ((output["result"]).toString(2))[7];
+
+        return output;
+    }
+
+}
+
+//Facilitates branching instructions and Instruction Memory Increment.
+class Program_Counter {
+    constructor() {
+        this.Counter = 0x00;
+        this.Return_Address = 0x00;
+    }
+
+    access(INC = 0, JMP = 0, CALL = 0, RET = 0, address = 0b00000000) {
+        if (INC) {
+            this.Counter = this.Counter + 1; //Need greater than 255 guard?
+        } else if (JMP) {
+            this.Counter = address;
+        } else if (CALL) { // Call then address to jump then the return address
+            this.Return_Address = this.Counter + 1;
+            this.Counter = address;
+        } else if (RET) {
+            this.Counter = this.Return_Address;
+        }
+
+        return this.Counter;
+    }
+
+}
+
+//Holds program being executed.
+class Instruction_Memory {
+    constructor() {
+        this.memory = [];
+        for (let i = 0; i < 256; i++) {
+            this.memory.push(i);
+        }
+    }
+
+    access(index = 0) {
+        if ((index >= 0) && ( index <= 255)) {
+            return this.memory[index];
+        } else {
+            console.log("INVALID INDEX")
+        }
     }
 }
+
 
 class CPU {
     constructor() {
@@ -173,13 +221,3 @@ class CPU {
         console.log(this.Reg_File.x);
     }
 }
-
-let t = new ALU();
-
-let A = 0b1;
-
-console.log("A:   " + (A << 7).toString(2));
-
-t.access(0b00111100);
-
-
