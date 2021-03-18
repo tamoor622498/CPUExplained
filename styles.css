@@ -1,0 +1,6 @@
+textarea {
+    background: url("lines.png") no-repeat local;
+    padding-left: 35px;
+    padding-top: 10px;
+    border-color:#ccc;
+}

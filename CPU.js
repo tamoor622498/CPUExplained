@@ -10,7 +10,7 @@ class Register_File {
         this.reg3 = 0x00;
     }
 
-    access (wr_address = 0b00, write_data = 0b00000000, write_enable = false, rda_address = 0b00, rdb_address = 0b00) {
+    access(wr_address = 0b00, write_data = 0b00000000, write_enable = false, rda_address = 0b00, rdb_address = 0b00) {
         if (write_enable) {
             switch (wr_address) { //If write_enable is true, data is written is to reg based on wr_address
                 case 0b00:
@@ -78,7 +78,7 @@ class ALU {
         this.negative = 0;
     }
 
-    access (opcode = 0b00000000, A = 0b00000000, B = 0b00000000) {
+    access(opcode = 0b00000000, A = 0b00000000, B = 0b00000000) {
         let output = {};
         let msb = 0;
         let As = 0;
@@ -204,7 +204,7 @@ class Instruction_Memory {
     }
 
     access(index = 0) {
-        if ((index >= 0) && ( index <= 255)) {
+        if ((index >= 0) && (index <= 255)) {
             return this.memory[index];
         } else {
             console.log("INVALID INDEX")
@@ -218,35 +218,61 @@ class CPU {
         this.regA = 0xFF;
         this.regB = 0xFF;
         this.Reg_File = new Register_File();
-        console.log(this.Reg_File.x);
+        this.IM = new Instruction_Memory();
     }
 }
 
-let IM = new Instruction_Memory();
+function compiler(CPU) {
+
+}
 
 document.getElementById("myBtn").onclick = function () {
 
-    let x = document.getElementById("textarea").value;
-
-    let y = x.split("\n");
+    let Full_Text = (document.getElementById("textarea").value).replaceAll(/,/g, "");
+    let lines = Full_Text.split(/\r?\n/);
     document.getElementById("textarea2").value = "";
-    let z = 0;
-    for (let i = 0; i < y.length; i++) {
-        z = y[i].split(" ");
 
-        let g = 0;
-        while (g < z.length) {
-            if (z[g] === String.fromCharCode(32)) {
-                z.splice(g,1);
+    let words = [];
+    for (let i = 0; i < lines.length; i++) {
+        words[i] = lines[i].split(" ");
+        let index = 0;
+
+        while (index < words[i].length) {
+            if (words[i][index] === "") {
+                words[i].splice(index, 1);
             } else {
-                g++;
+                index++;
             }
         }
 
-        for (let j = 0; j < z.length; j++) {
-            document.getElementById("textarea2").value += "> " + z[j] + "\n";
+        if (words[i].length < 1) {
+            words[i][0] = "NOOP";
         }
 
     }
+
+    console.log(lines);
+    console.log(words);
+    // let words = 0;
+    // for (let i = 0; i < lines.length; i++) {
+    //     words = lines[i].split(" ");
+    //     let g = 0;
+    //     while (g < words.length) {
+    //         //words[g].replace(/,/g,"")
+    //         if (words[g] === "") {
+    //             words.splice(g, 1);
+    //         } else {
+    //             g++;
+    //         }
+    //     }
+    // }
+
+    for (let j = 0; j < lines.length; j++) {
+        // if (words[j] !== "") {
+        document.getElementById("textarea2").value += "> " + lines[j] + "\n";
+        //}
+
+    }
+
 
 }
