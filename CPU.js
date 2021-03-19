@@ -457,7 +457,18 @@ function compiler(CPU, code) {
                 throw new Error('Error on line ' + (i+1) + ": " + lines[i]);
         }
 
-        console.log(words[i][0] + " " + instruction[0].toString(2));
+        switch (words[i][0]) {
+            case "JMP":
+            case "JMPC":
+            case "CALL":
+                if (words[i][1] === undefined) {
+                    throw new Error('Error on line ' + (i+1) + ": " + lines[i]);
+                }
+                instruction[1] = parseInt(words[i][1]);
+                break;
+        }
+
+        console.log(words[i][0] + " " + instruction[0].toString(2) + " " + instruction[1]);
     }
 
     return words;
