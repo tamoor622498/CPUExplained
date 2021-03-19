@@ -1,0 +1,31 @@
+instruction[0] = instruction[0] << 2;
+                switch (words[i][1]) {
+                    case "R1":
+                        instruction[0] = instruction[0] | 0b00;
+                        break;
+                    case "R2":
+                        instruction[0] = instruction[0] | 0b01;
+                        break;
+                    case "R3":
+                        instruction[0] = instruction[0] | 0b10;
+                        break;
+                    case "R4":
+                        instruction[0] = instruction[0] | 0b11;
+                        break;
+                }
+
+                instruction[0] = instruction[0] << 2;
+                switch (words[i][2]) {
+                    case "R1":
+                        instruction[0] = instruction[0] | 0b00;
+                        break;
+                    case "R2":
+                        instruction[0] = instruction[0] | 0b01;
+                        break;
+                    case "R3":
+                        instruction[0] = instruction[0] | 0b10;
+                        break;
+                    case "R4":
+                        instruction[0] = instruction[0] | 0b11;
+                        break;
+                }

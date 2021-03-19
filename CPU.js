@@ -222,22 +222,17 @@ class CPU {
     }
 }
 
-function compiler(CPU) {
+function compiler(CPU, code) {
+    let Full_Text = ((code).replaceAll(/,/g, " ")).toUpperCase(); //Gets textarea value and comma to space and all uppercase
+    let lines = Full_Text.split(/\r?\n/); // Splits to array based on new line
 
-}
-
-document.getElementById("myBtn").onclick = function () {
-
-    let Full_Text = (document.getElementById("textarea").value).replaceAll(/,/g, "");
-    let lines = Full_Text.split(/\r?\n/);
-    document.getElementById("textarea2").value = "";
 
     let words = [];
     for (let i = 0; i < lines.length; i++) {
-        words[i] = lines[i].split(" ");
+        words[i] = lines[i].split(" "); //Line to works 2d array
         let index = 0;
 
-        while (index < words[i].length) {
+        while (index < words[i].length) { //Removes whitespace
             if (words[i][index] === "") {
                 words[i].splice(index, 1);
             } else {
@@ -245,34 +240,246 @@ document.getElementById("myBtn").onclick = function () {
             }
         }
 
-        if (words[i].length < 1) {
+        if (words[i].length < 1) { //Replaces empty lines with NOOP to keep branching instructions the same
             words[i][0] = "NOOP";
         }
 
     }
 
-    console.log(lines);
+    console.clear();
     console.log(words);
-    // let words = 0;
-    // for (let i = 0; i < lines.length; i++) {
-    //     words = lines[i].split(" ");
-    //     let g = 0;
-    //     while (g < words.length) {
-    //         //words[g].replace(/,/g,"")
-    //         if (words[g] === "") {
-    //             words.splice(g, 1);
-    //         } else {
-    //             g++;
-    //         }
-    //     }
-    // }
 
-    for (let j = 0; j < lines.length; j++) {
-        // if (words[j] !== "") {
-        document.getElementById("textarea2").value += "> " + lines[j] + "\n";
-        //}
+    let opcodes = [];
+    for (let i = 0; i < words.length; i++) {
+        let instruction = [];
+        switch (words[i][0]) {
+            case "AND":
+                instruction[0] = 0b0000;
+                break;
+            case "OR":
+                instruction[0] = 0b0001;
+                break;
+            case "XOR":
+                instruction[0] = 0b0010;
+                break;
+            case "NEG":
+                instruction[0] = 0b0011;
+                break;
+            case "ADD":
+                instruction[0] = 0b0100;
+                break;
+            case "ADDC":
+                instruction[0] = 0b0101;
+                break;
+            case "SUB":
+                instruction[0] = 0b0110;
+                break;
+            case "SUBC":
+                instruction[0] = 0b0111;
+                break;
+            case "LSL":
+            case "ASR":
+            case "ROL":
+            case "ROR":
+                instruction[0] = 0b1000;
+                break;
+            case "WR":
+                instruction[0] = 0b1001;
+                break;
+            case "RD":
+                instruction[0] = 0b1010;
+                break;
+            case "LD":
+                instruction[0] = 0b1011;
+                break;
+            case "JMP":
+            case "JMPC":
+                instruction[0] = 0b1100;
+                break;
+            case "CALL":
+            case "RET":
+                instruction[0] = 0b1101;
+                break;
+            case "WRIO":
+                instruction[0] = 0b1110;
+                break;
+            case "NOOP":
+            case "BRK":
+                instruction[0] = 0b1111;
+                break;
+            default:
+                throw new Error('Error on ' + (i+1) + ": " + lines[i]);
+        }
+        instruction[0] = instruction[0] << 2; //Shifted to left by 2
+        switch (words[i][0]) { //Inserts last 4 bits
+            case "AND":
+            case "OR":
+            case "XOR":
+            case "NEG":
+            case "ADD":
+            case "ADDC":
+            case "SUB":
+            case "SUBC":
+            case "LSL":
+            case "ASR":
+            case "ROL":
+            case "ROR":
+            case "WR":
+            case "RD":
+            case "LD":
+                switch (words[i][1]) {// Adds Rd address
+                    case "R1":
+                        instruction[0] = instruction[0] | 0b00;
+                        break;
+                    case "R2":
+                        instruction[0] = instruction[0] | 0b01;
+                        break;
+                    case "R3":
+                        instruction[0] = instruction[0] | 0b10;
+                        break;
+                    case "R4":
+                        instruction[0] = instruction[0] | 0b11;
+                        break;
+                    default:
+                        throw new Error('Error on line ' + (i+1) + ": " + lines[i]);
+                }
+                break;
+            case "JMPC":
+                switch (words[i][2]) {// Adds flag
+                    case "C":
+                        instruction[0] = instruction[0] | 0b11;
+                        break;
+                    case "Z":
+                    case "N":
+                        instruction[0] = instruction[0] | 0b10;
+                        break;
+                    default:
+                        throw new Error('Error on line ' + (i+1) + ": " + lines[i]);
+                }
+                break;
+            case "JMP": //Adds 2 zeros at the end
+            case "WRIO":
+            case "CALL":
+            case "NOOP":
+                instruction[0] = instruction[0] | 0b00;
+                break;
+            case "RET":
+                instruction[0] = instruction[0] | 0b10;
+                break;
+            case "BRK":
+                instruction[0] = instruction[0] | 0b11;
+                break;
+            default:
+                throw new Error('Error on line ' + (i+1) + ": " + lines[i]);
+        }
 
+        instruction[0] = instruction[0] << 2; //Shifted 2 bits
+        switch (words[i][0]) {
+            case "AND":
+            case "OR":
+            case "XOR":
+            case "ADD":
+            case "ADDC":
+            case "SUB":
+            case "SUBC":
+            case "WR":
+            case "RD":
+                switch (words[i][2]) {// Adds Rr address
+                    case "R1":
+                        instruction[0] = instruction[0] | 0b00;
+                        break;
+                    case "R2":
+                        instruction[0] = instruction[0] | 0b01;
+                        break;
+                    case "R3":
+                        instruction[0] = instruction[0] | 0b10;
+                        break;
+                    case "R4":
+                        instruction[0] = instruction[0] | 0b11;
+                        break;
+                    default:
+                        throw new Error('Error on line ' + (i+1) + ": " + lines[i]);
+                }
+                break;
+            case "WRIO":
+                switch (words[i][1]) {
+                    case "R1":
+                        instruction[0] = instruction[0] | 0b00;
+                        break;
+                    case "R2":
+                        instruction[0] = instruction[0] | 0b01;
+                        break;
+                    case "R3":
+                        instruction[0] = instruction[0] | 0b10;
+                        break;
+                    case "R4":
+                        instruction[0] = instruction[0] | 0b11;
+                        break;
+                    default:
+                        throw new Error('Error on line ' + (i+1) + ": " + lines[i]);
+                }
+                break;
+            case "JMPC":
+                switch (words[i][2]) {// Adds C address
+                    case "C":
+                        instruction[0] = instruction[0] | 0b00;
+                        break;
+                    case "Z":
+                        instruction[0] = instruction[0] | 0b10;
+                        break;
+                    case "N":
+                        instruction[0] = instruction[0] | 0b01;
+                        break;
+                    default:
+                        throw new Error('Error on line ' + (i+1) + ": " + lines[i]);
+                }
+                break;
+            case "NEG":
+            case "LSL":
+            case "LD":
+            case "JMP": //Adds 2 zeros at the end
+            case "CALL":
+            case "NOOP":
+            case "RET":
+                instruction[0] = instruction[0] | 0b00;
+                break;
+            case "ASR":
+                instruction[0] = instruction[0] | 0b01;
+                break;
+            case "ROL":
+                instruction[0] = instruction[0] | 0b10;
+                break;
+            case "ROR":
+            case "BRK":
+                instruction[0] = instruction[0] | 0b11;
+                break;
+            default:
+                throw new Error('Error on line ' + (i+1) + ": " + lines[i]);
+        }
+
+        console.log(words[i][0] + " " + instruction[0].toString(2));
     }
+
+    return words;
+}
+
+document.getElementById("myBtn").onclick = function () {
+    let processor = new CPU();
+    let code = document.getElementById("textarea").value;
+    try {
+        let text = compiler(processor, code);
+    } catch (e) {
+        document.getElementById("textarea2").value = e.message;
+    }
+
+
+    // document.getElementById("textarea2").value = ""; //Textarea cleared
+    // for (let j = 0; j < text.length; j++) {
+    //     // if (words[j] !== "") {
+    //     document.getElementById("textarea2").value += "> " + text[j] + "\n";
+    //     //}
+    //
+    // }
 
 
 }
