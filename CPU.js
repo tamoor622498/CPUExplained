@@ -223,32 +223,36 @@ class CPU {
 }
 
 function compiler(CPU, code) {
-    let Full_Text = ((code).replaceAll(/,/g, " ")).toUpperCase(); //Gets textarea value and comma to space and all uppercase
+    let Full_Text = ((code).replaceAll(/,/g, " ")).toUpperCase(); // Gets textarea value and comma to space and all uppercase
     let lines = Full_Text.split(/\r?\n/); // Splits to array based on new line
 
 
     let words = [];
+	let bad_alphabet = /[^a-z0-9,: ]/gi; // Anything not alphanumeric + comma + colon + space
     for (let i = 0; i < lines.length; i++) {
-        words[i] = lines[i].split(" "); //Line to works 2d array
-        let index = 0;
+		// Check for bad chars, log error, then return null
+		var bad_chars = lines[i].match(bad_alphabet);
+		if(bad_chars){
+			console.log("Invalid character '" + bad_chars[0] + "' on line " + (i+1));
+			return null;
+		}
 
-        while (index < words[i].length) { //Removes whitespace
-            if (words[i][index] === "") {
-                words[i].splice(index, 1);
-            } else {
-                index++;
-            }
-        }
+		// Remove excess whitespace, then split args
+        let args = lines[i].replaceAll(/\s+/g,' ').split(" ");
 
-        if (words[i].length < 1) { //Replaces empty lines with NOOP to keep branching instructions the same
-            words[i][0] = "NOOP";
-        }
+		// Skip empty lines
+		if(args.length == 0){
+			continue;
+		}
 
+		// Add instruction to list
+		words.push(args)
     }
 
-    console.clear();
+    //console.clear();
     console.log(words);
 
+	// Parse instruction list
     let opcodes = [];
     for (let i = 0; i < words.length; i++) {
         let instruction = [];
