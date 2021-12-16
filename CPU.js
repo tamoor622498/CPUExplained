@@ -228,8 +228,17 @@ function compiler(CPU, code) {
 
 
     let words = [];
-	let bad_alphabet = /[^a-z0-9,: ]/gi; // Anything not alphanumeric + comma + colon + space
+	let bad_alphabet = /[^a-z0-9,:_ ]/gi; // Anything not alphanumeric + comma + colon + space
+	let comment_char = '%';
     for (let i = 0; i < lines.length; i++) {
+		// Remove tabs
+		lines[i] = lines[i].replaceAll(/\t/g, "");
+
+		// Allow comments, and skip  that line
+		if(lines[i][0] == comment_char){
+			continue;
+		}
+
 		// Check for bad chars, log error, then return null
 		var bad_chars = lines[i].match(bad_alphabet);
 		if(bad_chars){
@@ -241,7 +250,7 @@ function compiler(CPU, code) {
         let args = lines[i].replaceAll(/\s+/g,' ').split(" ");
 
 		// Skip empty lines
-		if(args.length == 0){
+		if(args.length == 0 || args[0] === ""){
 			continue;
 		}
 
@@ -312,7 +321,7 @@ function compiler(CPU, code) {
                 instruction[0] = 0b1111;
                 break;
             default:
-                throw new Error('Error on ' + (i+1) + ": " + lines[i]);
+                throw new Error('Error on ' + (i+1) + ": " + words[i]);
         }
         instruction[0] = instruction[0] << 2; //Shifted to left by 2
         switch (words[i][0]) { //Inserts last 4 bits
@@ -345,7 +354,7 @@ function compiler(CPU, code) {
                         instruction[0] = instruction[0] | 0b11;
                         break;
                     default:
-                        throw new Error('Error on line ' + (i+1) + ": " + lines[i]);
+                        throw new Error('Error on line ' + (i+1) + ": " + words[i]);
                 }
                 break;
             case "JMPC":
@@ -358,7 +367,7 @@ function compiler(CPU, code) {
                         instruction[0] = instruction[0] | 0b10;
                         break;
                     default:
-                        throw new Error('Error on line ' + (i+1) + ": " + lines[i]);
+                        throw new Error('Error on line ' + (i+1) + ": " + words[i]);
                 }
                 break;
             case "JMP": //Adds 2 zeros at the end
