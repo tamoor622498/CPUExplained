@@ -7,28 +7,37 @@
 </head>
 <body>
 
-<div><textarea id="textarea" name="w3review" rows="20" cols="50">AND R1,R2
-OR R3, R4
-XOR R1, R3
-NEG R2
-ADD R1, R4
-ADDC R2, R1
-SUB R2, R2
-SUBC R1, R1
-LSL R3
-ASR R4
-ROL R1
-ROR R2
-WR R2, R3
-RD R2, R4
-LD R1
-JMP, 17
-JMPC, 18, Z
-CALL, 10
-RET
-WRIO R3
-NOOP
-BRK</textarea>
+<div><textarea id="textarea" name="w3review" rows="20" cols="50">
+% Program runs collatz for initial number
+LD R0, 9
+
+LD R1, 1
+
+PRT R0, N
+
+% Main loop (R1 contains number n)
+loop_start:
+	LD R2, 1
+	AND R2, R0
+
+	BRQ R1, R2, odd
+	even:
+		% n/2
+		SR R0, 2
+		JMP loop_condition
+	odd:
+		% 3n + 1
+		ADD R0, R0
+		ADD R0, R0
+		ADD R0, R1
+
+	loop_condition:
+		PRT R0, N
+		BRG R0, R1, loop_start
+
+% End of program
+BRK
+</textarea>
 </div>
 <button id="myBtn" type="button">Run</button>
 <div><textarea id="textarea2" name="w3review" rows="20" cols="50"></textarea>

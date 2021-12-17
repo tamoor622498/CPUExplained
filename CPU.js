@@ -228,6 +228,7 @@ function compiler(CPU, code) {
 
 
     let words = [];
+	let labels = [];
 	let bad_alphabet = /[^a-z0-9,:_ ]/gi; // Anything not alphanumeric + comma + colon + space
 	let comment_char = '%';
     for (let i = 0; i < lines.length; i++) {
@@ -242,8 +243,7 @@ function compiler(CPU, code) {
 		// Check for bad chars, log error, then return null
 		var bad_chars = lines[i].match(bad_alphabet);
 		if(bad_chars){
-			console.log("Invalid character '" + bad_chars[0] + "' on line " + (i+1));
-			return null;
+			throw new Error("Invalid character '" + bad_chars[0] + "' on line " + (i+1));
 		}
 
 		// Remove excess whitespace, then split args
@@ -254,230 +254,227 @@ function compiler(CPU, code) {
 			continue;
 		}
 
+		// Check if valid label
+		var colon = args[0].match(/:/g);
+		if(colon){
+			if(colon.length > 1){
+				throw new Error("Invalid label \"" + args[0] + "\" on line " + (i+1));
+			}
+
+			// Get label
+			var label = args[0].split(':', 1)[0]
+			if(label === ""){
+				throw new Error("Invalid empty label on line " + (i+1));
+			}
+
+			// Add label location
+			labels[label] = words.length;
+
+			continue;
+		}
+
 		// Add instruction to list
 		words.push(args)
     }
 
     //console.clear();
+	console.log(labels);
     console.log(words);
 
 	// Parse instruction list
     let opcodes = [];
     for (let i = 0; i < words.length; i++) {
         let instruction = [];
+
+		// Set high 4 bits of instruction
         switch (words[i][0]) {
-            case "AND":
+            case "BRK":
                 instruction[0] = 0b0000;
                 break;
-            case "OR":
+            case "AND":
                 instruction[0] = 0b0001;
                 break;
-            case "XOR":
+            case "OR":
                 instruction[0] = 0b0010;
                 break;
-            case "NEG":
+            case "XOR":
                 instruction[0] = 0b0011;
                 break;
             case "ADD":
                 instruction[0] = 0b0100;
                 break;
-            case "ADDC":
+            case "SUB":
                 instruction[0] = 0b0101;
                 break;
-            case "SUB":
+            case "SL":
+            case "SR":
+            case "NEG":
+            case "LD":
                 instruction[0] = 0b0110;
                 break;
-            case "SUBC":
+            case "RD":
                 instruction[0] = 0b0111;
                 break;
-            case "LSL":
-            case "ASR":
-            case "ROL":
-            case "ROR":
+            case "JMP":
                 instruction[0] = 0b1000;
                 break;
-            case "WR":
+            case "JPF":
                 instruction[0] = 0b1001;
                 break;
-            case "RD":
+            case "CALL":
                 instruction[0] = 0b1010;
                 break;
-            case "LD":
+            case "RET":
+                instruction[0] = 0b1010;
+                break;
+            case "PRT":
+                instruction[0] = 0b1010;
+                break;
+            case "BRQ":
                 instruction[0] = 0b1011;
                 break;
-            case "JMP":
-            case "JMPC":
+            case "BRG":
                 instruction[0] = 0b1100;
                 break;
-            case "CALL":
-            case "RET":
+            case "BRL":
                 instruction[0] = 0b1101;
                 break;
-            case "WRIO":
+            case "SAV":
                 instruction[0] = 0b1110;
                 break;
-            case "NOOP":
-            case "BRK":
+            case "NOP":
                 instruction[0] = 0b1111;
                 break;
+            
             default:
                 throw new Error('Error on ' + (i+1) + ": " + words[i]);
         }
-        instruction[0] = instruction[0] << 2; //Shifted to left by 2
-        switch (words[i][0]) { //Inserts last 4 bits
+
+		// Parse first register argument, if necessary
+        instruction[0] = instruction[0] << 2;
+        switch (words[i][0]) {
+            case "BRK":
+            case "JMP":
+            case "JPF":
+            case "CALL":
+            case "RET":
+            case "NOP":
+				instruction[0] = instruction[0] | 0b11;
+				break;
             case "AND":
             case "OR":
             case "XOR":
-            case "NEG":
             case "ADD":
-            case "ADDC":
             case "SUB":
-            case "SUBC":
-            case "LSL":
-            case "ASR":
-            case "ROL":
-            case "ROR":
-            case "WR":
-            case "RD":
+            case "SL":
+            case "SR":
+            case "NEG":
             case "LD":
-                switch (words[i][1]) {// Adds Rd address
-                    case "R1":
-                        instruction[0] = instruction[0] | 0b00;
-                        break;
-                    case "R2":
-                        instruction[0] = instruction[0] | 0b01;
-                        break;
-                    case "R3":
-                        instruction[0] = instruction[0] | 0b10;
-                        break;
-                    case "R4":
-                        instruction[0] = instruction[0] | 0b11;
-                        break;
-                    default:
-                        throw new Error('Error on line ' + (i+1) + ": " + words[i]);
-                }
-                break;
-            case "JMPC":
-                switch (words[i][2]) {// Adds flag
-                    case "C":
-                        instruction[0] = instruction[0] | 0b11;
-                        break;
-                    case "Z":
-                    case "N":
-                        instruction[0] = instruction[0] | 0b10;
-                        break;
-                    default:
-                        throw new Error('Error on line ' + (i+1) + ": " + words[i]);
-                }
-                break;
-            case "JMP": //Adds 2 zeros at the end
-            case "WRIO":
-            case "CALL":
-            case "NOOP":
-                instruction[0] = instruction[0] | 0b00;
-                break;
-            case "RET":
-                instruction[0] = instruction[0] | 0b10;
-                break;
-            case "BRK":
-                instruction[0] = instruction[0] | 0b11;
-                break;
+            case "RD":
+            case "PRT":
+            case "BRQ":
+            case "BRG":
+            case "BRL":
+            case "SAV":
+				// Check if enough arguments are present
+				if(words[i].length < 2){
+	                throw new Error("Missing argument on line " + (i+1) + ": " + words[i]);
+				}
+
+				// Parse register
+				let rd = words[i][1].match(/^R([0-3])$/);
+				if(!rd){
+					throw new Error("Invalid register '" + words[i][1] + "' on line" + (i+1) + ": " + words[i]);
+				}
+
+				// Set register bits
+				instruction[0] = instruction[0] | parseInt(rd[1]);
+				break;
             default:
-                throw new Error('Error on line ' + (i+1) + ": " + lines[i]);
+                throw new Error('Error on line ' + (i+1) + ": " + words[i]);
         }
 
-        instruction[0] = instruction[0] << 2; //Shifted 2 bits
+		// Parse second argument, if necessary
+        instruction[0] = instruction[0] << 2;
         switch (words[i][0]) {
+            case "BRK":
+			case "NEG":
+			case "JMP":
+			case "JPF":
+			case "CALL":
+			case "RET":
+			case "NOP":
+				break;
+			case "PRT":
+				if(words[i].length < 3){
+	                throw new Error("Missing argument on line " + (i+1) + ": " + words[i]);
+				}
+				instruction[0] = instruction[0] | 0b10;
+
+				instruction[1] = words[i][2][0]; // Only take single character for type argument
+				break;
+			case "SL":
+			case "SR":
+			case "LD":
+				if(words[i].length < 3){
+	                throw new Error("Missing argument on line " + (i+1) + ": " + words[i]);
+				}
+
+				instruction[1] = parseInt(words[i][2]);
+				break;
             case "AND":
             case "OR":
             case "XOR":
             case "ADD":
-            case "ADDC":
             case "SUB":
-            case "SUBC":
-            case "WR":
             case "RD":
-                switch (words[i][2]) {// Adds Rr address
-                    case "R1":
-                        instruction[0] = instruction[0] | 0b00;
-                        break;
-                    case "R2":
-                        instruction[0] = instruction[0] | 0b01;
-                        break;
-                    case "R3":
-                        instruction[0] = instruction[0] | 0b10;
-                        break;
-                    case "R4":
-                        instruction[0] = instruction[0] | 0b11;
-                        break;
-                    default:
-                        throw new Error('Error on line ' + (i+1) + ": " + lines[i]);
-                }
-                break;
-            case "WRIO":
-                switch (words[i][1]) {
-                    case "R1":
-                        instruction[0] = instruction[0] | 0b00;
-                        break;
-                    case "R2":
-                        instruction[0] = instruction[0] | 0b01;
-                        break;
-                    case "R3":
-                        instruction[0] = instruction[0] | 0b10;
-                        break;
-                    case "R4":
-                        instruction[0] = instruction[0] | 0b11;
-                        break;
-                    default:
-                        throw new Error('Error on line ' + (i+1) + ": " + lines[i]);
-                }
-                break;
-            case "JMPC":
-                switch (words[i][2]) {// Adds C address
-                    case "C":
-                        instruction[0] = instruction[0] | 0b00;
-                        break;
-                    case "Z":
-                        instruction[0] = instruction[0] | 0b10;
-                        break;
-                    case "N":
-                        instruction[0] = instruction[0] | 0b01;
-                        break;
-                    default:
-                        throw new Error('Error on line ' + (i+1) + ": " + lines[i]);
-                }
-                break;
-            case "NEG":
-            case "LSL":
-            case "LD":
-            case "JMP": //Adds 2 zeros at the end
-            case "CALL":
-            case "NOOP":
-            case "RET":
-                instruction[0] = instruction[0] | 0b00;
-                break;
-            case "ASR":
-                instruction[0] = instruction[0] | 0b01;
-                break;
-            case "ROL":
-                instruction[0] = instruction[0] | 0b10;
-                break;
-            case "ROR":
-            case "BRK":
-                instruction[0] = instruction[0] | 0b11;
-                break;
+            case "BRQ":
+            case "BRG":
+            case "BRL":
+            case "SAV":
+				// Check if enough arguments are present
+				if(words[i].length < 3){
+	                throw new Error("Missing argument on line" + (i+1) + ": " + words[i]);
+				}
+
+				// Parse register
+				let rr = words[i][2].match(/^R([0-3])$/);
+				if(!rr){
+					throw new Error("Invalid register '" + words[i][2] + "' on line" + (i+1) + ": " + words[i]);
+				}
+
+				// Set register bits
+				instruction[0] = instruction[0] | parseInt(rr[1]);
+				break;
             default:
-                throw new Error('Error on line ' + (i+1) + ": " + lines[i]);
+                throw new Error('Error on line ' + (i+1) + ": " + words[i]);
         }
 
         switch (words[i][0]) {
             case "JMP":
-            case "JMPC":
             case "CALL":
                 if (words[i][1] === undefined) {
-                    throw new Error('Error on line ' + (i+1) + ": " + lines[i]);
+                    throw new Error('Error on line ' + (i+1) + ": " + words[i]);
                 }
-                instruction[1] = parseInt(words[i][1]);
+
+				if(labels[words[i][1]] === undefined){
+					throw new Error('Label "' + words[i][1] + '" on line ' + (i+1) + " not found.");
+				}
+
+                instruction[1] = labels[words[i][1]];
+                break;
+			case "BRQ":
+			case "BRG":
+			case "BRL":
+                if (words[i][3] === undefined) {
+                    throw new Error('Error on line ' + (i+1) + ": " + words[i]);
+                }
+
+				if(labels[words[i][3]] === undefined){
+					throw new Error('Label "' + words[i][3] + '" on line ' + (i+1) + " not found.");
+				}
+
+                instruction[1] = labels[words[i][3]];
                 break;
         }
 
@@ -488,16 +485,17 @@ function compiler(CPU, code) {
 }
 
 document.getElementById("myBtn").onclick = function () {
+    document.getElementById("textarea2").value = ""; //Textarea cleared
     let processor = new CPU();
     let code = document.getElementById("textarea").value;
     try {
         let text = compiler(processor, code);
     } catch (e) {
         document.getElementById("textarea2").value = e.message;
+		console.log(e.stack);
     }
 
 
-    // document.getElementById("textarea2").value = ""; //Textarea cleared
     // for (let j = 0; j < text.length; j++) {
     //     // if (words[j] !== "") {
     //     document.getElementById("textarea2").value += "> " + text[j] + "\n";
