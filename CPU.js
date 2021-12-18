@@ -1,292 +1,227 @@
-// Tamoor H
 // An interactive web cpu.
-
-//Keeps the CPU registers, facilitates read and write.
-class Register_File {
-    constructor() {
-        this.reg0 = 0x00; //Internal registers
-        this.reg1 = 0x00;
-        this.reg2 = 0x00;
-        this.reg3 = 0x00;
-    }
-
-    access(wr_address = 0b00, write_data = 0b00000000, write_enable = false, rda_address = 0b00, rdb_address = 0b00) {
-        if (write_enable) {
-            switch (wr_address) { //If write_enable is true, data is written is to reg based on wr_address
-                case 0b00:
-                    this.reg0 = write_data;
-                    break;
-                case 0b01:
-                    this.reg1 = write_data;
-                    break;
-                case 0b10:
-                    this.reg2 = write_data;
-                    break;
-                case 0b11:
-                    this.reg3 = write_data;
-                    break;
-                default:
-                    console.log("INVALID REGISTER ADDRESS");
-            }
-        }
-
-        let toReturn = {}; //Object with data.
-
-        switch (rda_address) { //Adds reg rda data to JSON
-            case 0b00:
-                toReturn["A"] = this.reg0;
-                break;
-            case 0b01:
-                toReturn["A"] = this.reg1;
-                break;
-            case 0b10:
-                toReturn["A"] = this.reg2;
-                break;
-            case 0b11:
-                toReturn["A"] = this.reg3;
-                break;
-            default:
-                console.log("INVALID RDA ADDRESS");
-        }
-
-        switch (rdb_address) { //Adds reg rdb data to JSON
-            case 0b00:
-                toReturn["B"] = this.reg0;
-                break;
-            case 0b01:
-                toReturn["B"] = this.reg1;
-                break;
-            case 0b10:
-                toReturn["B"] = this.reg2;
-                break;
-            case 0b11:
-                toReturn["B"] = this.reg3;
-                break;
-            default:
-                console.log("INVALID RDB ADDRESS");
-        }
-
-        return toReturn;
-    }
-}
-
-//Arithmetic operations.
-class ALU {
-    constructor() {
-        this.carry = 0;
-        this.zero = 0;
-        this.negative = 0;
-    }
-
-    access(opcode = 0b00000000, A = 0b00000000, B = 0b00000000) {
-        let output = {};
-        let msb = 0;
-        let As = 0;
-        let Bs = 0;
-        let R = 0;
-        let Rs = 0;
-        switch (true) {//Switch statements compare this value with cases.
-            //AND Instruction
-            case (opcode & 0b11110000) === 0b00000000 : //Important part of opcode gotten from bit masking.
-                output["result"] = A & B;
-                break;
-            //OR Instruction
-            case (opcode & 0b11110000) === 0b00010000 :
-                output["result"] = A | B;
-                break;
-            //XOR Instruction
-            case (opcode & 0b11110000) === 0b00100000 :
-                output["result"] = A ^ B;
-                break;
-            //NEG Instruction
-            case (opcode & 0b11110011) === 0b00110000 :
-                output["result"] = (~A + 1) & 0xFF;
-                break;
-            //ADD Instruction
-            case (opcode & 0b11110000) === 0b01000000 :
-                R = (A + B) & 0xFF;
-                As = A.toString(2);//Convert to string
-                Bs = B.toString(2);
-                Rs = R.toString(2);
-                this.carry = (parseInt(As[7]) & parseInt(Bs[7])) | (parseInt(As[7]) & -parseInt(Rs[7])) | (parseInt(Bs[7]) & -parseInt(Rs[7]));//Carry equation from AVR Instruction Set
-                output["result"] = R;
-                break;
-            //ADD with carry Instruction
-            case (opcode & 0b11110000) === 0b01010000 :
-                R = (A + B + this.carry) & 0xFF;
-                As = A.toString(2);//Convert to string
-                Bs = B.toString(2);
-                Rs = R.toString(2);
-                this.carry = (parseInt(As[7]) & parseInt(Bs[7])) | (parseInt(As[7]) & -parseInt(Rs[7])) | (parseInt(Bs[7]) & -parseInt(Rs[7]));//Carry equation from AVR Instruction Set
-                output["result"] = R;
-                break;
-            //SUB Instruction
-            case (opcode & 0b11110000) === 0b01100000 :
-                R = (A - B) & 0xFF;
-                As = A.toString(2);//Convert to string
-                Bs = B.toString(2);
-                Rs = R.toString(2);
-                this.carry = (-parseInt(As[7]) & parseInt(Bs[7])) | (parseInt(Bs[7]) & parseInt(Rs[7])) | (parseInt(Rs[7]) & -parseInt(As[7]));//Carry equation from AVR Instruction Set
-                output["result"] = R;
-                break;
-            //SUB with carry Instruction
-            case (opcode & 0b11110000) === 0b01110000 :
-                R = (A - B - this.carry) & 0xFF;
-                As = A.toString(2);//Convert to string
-                Bs = B.toString(2);
-                Rs = R.toString(2);
-                this.carry = (-parseInt(As[7]) & parseInt(Bs[7])) | (parseInt(Bs[7]) & parseInt(Rs[7])) | (parseInt(Rs[7]) & -parseInt(As[7]));//Carry equation from AVR Instruction Set
-                output["result"] = R;
-                break;
-            //Logical Shift Left Instruction
-            case (opcode & 0b11110011) === 0b10000000 :
-                this.carry = (A & 0x80) >> 7;
-                output["result"] = (A << 1) & 0xFF;
-                break;
-            //Arithmetic Shift Right Instruction
-            case (opcode & 0b11110011) === 0b10000001 :
-                msb = A & 0x80; //Saves the Most Significant Bit.
-                output["result"] = (A >> 1) | msb; //Shifts A right and inserts the saved MSB.
-                break;
-            //Rotate Left through carry Instruction
-            case (opcode & 0b11110011) === 0b10000010 :
-                msb = (A & 0x80) >> 7; //Saves the Most Significant Bit.
-                output["result"] = (((A << 1) | this.carry) & 0xFF) | msb; //Shifts A right and inserts the saved MSB.
-                this.carry = msb;
-                break;
-            //Rotate Right through carry Instruction
-            case (opcode & 0b11110011) === 0b10000011 :
-                output["result"] = (((A >> 1) | this.carry << 7) & 0xFF); //Shifts A right and inserts the saved MSB.
-                this.carry = (A & 0b00000001);
-                break;
-            default :
-                console.log("INVALID OPCODE");
-        }
-        this.zero = output["result"] === 0x00 ? 1 : 0;
-        this.negative = ((output["result"]).toString(2))[7];
-
-        return output;
-    }
-
-}
-
-//Facilitates branching instructions and Instruction Memory Increment.
-class Program_Counter {
-    constructor() {
-        this.Counter = 0x00;
-        this.Return_Address = 0x00;
-    }
-
-    access(INC = 0, JMP = 0, CALL = 0, RET = 0, address = 0b00000000) {
-        if (INC) {
-            this.Counter = this.Counter + 1; //Need greater than 255 guard?
-        } else if (JMP) {
-            this.Counter = address;
-        } else if (CALL) { // Call then address to jump then the return address
-            this.Return_Address = this.Counter + 1;
-            this.Counter = address;
-        } else if (RET) {
-            this.Counter = this.Return_Address;
-        }
-
-        return this.Counter;
-    }
-
-}
-
-//Holds program being executed.
-class Instruction_Memory {
-    constructor() {
-        this.memory = [];
-        for (let i = 0; i < 256; i++) {
-            this.memory.push(0xFF);
-        }
-    }
-
-    access(index = 0) {
-        if ((index >= 0) && (index <= 255)) {
-            return this.memory[index];
-        } else {
-            console.log("INVALID INDEX")
-        }
-    }
-}
 
 
 class CPU {
     constructor() {
-        this.regA = 0xFF;
-        this.regB = 0xFF;
-        this.Reg_File = new Register_File();
-        this.IM = new Instruction_Memory();
+        this.regA = 0x00;
+        this.regB = 0x00;
+        this.savedAddress = 0;
+        this.Reg_File = [0, 0, 0, 0];
+        //this.IM = new Instruction_Memory();
+        this.PC = 0;
+        this.carry = 0;
+        this.neg = 0;
+        this.zero = 0;
+        this.over = 0;
+        this.SRAM = Array(255);
+        for (let i = 0; i < this.SRAM.length; i++) {
+            this.SRAM[i] = 0;
+        }
+        this.output = Array();
     }
+
+    ALU(opcode, Rd, Rr) {
+        //Flags reset
+        this.carry = 0;
+        this.neg = 0;
+        this.zero = 0;
+        this.over = 0;
+
+        //holds result
+        let res;
+
+        //Operation
+        switch (opcode) {
+            case ((opcode[0] & 0b11110000) == 0b00010000): //AND
+                res = this.Reg_File[Rd] & this.Reg_File[Rr];
+                break;
+            case ((opcode[0] & 0b11110000) == 0b00100000): //OR
+                res = this.Reg_File[Rd] | this.Reg_File[Rr];
+                break;
+            case ((opcode[0] & 0b11110000) == 0b00110000): //XOR
+                res = this.Reg_File[Rd] ^ this.Reg_File[Rr];
+                break;
+            case ((opcode[0] & 0b11110000) == 0b01000000): //ADD
+                res = this.Reg_File[Rd] + this.Reg_File[Rr];
+                break;
+            case ((opcode[0] & 0b11110000) == 0b01010000): //SUB
+                res = this.Reg_File[Rd] - this.Reg_File[Rr];
+                break;
+            case ((opcode[0] & 0b11110011) == 0b01100000): //SL
+                res = this.Reg_File[Rd] >> opcode[1];
+                break;
+            case ((opcode[0] & 0b11110011) == 0b01100001): //SR
+                res = this.Reg_File[Rd] << opcode[1];
+                break;
+            case ((opcode[0] & 0b11110011) == 0b01100010): //NEG
+                res = ~this.Reg_File[Rd];
+                break;
+        }
+
+        if (res = 0) {
+            this.zero = 1;
+        }
+        if (res > 255) { //Number greater than 0b11111111
+            this.over = 1;
+            this.carry = 1;
+        }
+
+        res = res & 0b11111111; //Forces the number to be 8 bit
+
+        if ((((res).toString(2)).padStart(8, "0")[0]) == 1) { //If the MSB is a one
+            this.neg = 1;
+        }
+        return res;
+    }
+
+    Control_Logic(opcodes) {
+        let done = false;
+        while (!done) {
+            let opcode = opcodes[this.PC];
+            let Rd = (opcode[0] & 0b00001100) >> 2; //Grabs bit 3 and 2
+            let Rr = (opcode[0] & 0b00000011); //Grabs bit 1 and 0
+
+            switch (opcode[0]) {
+                case (opcode[0] == 0b00000000):
+                    done = true;
+                    break;
+                case ((opcode[0] & 0b11110000) == 0b00010000): //AND
+                case ((opcode[0] & 0b11110000) == 0b00100000): //OR
+                case ((opcode[0] & 0b11110000) == 0b00110000): //XOR
+                case ((opcode[0] & 0b11110000) == 0b01000000): //ADD
+                case ((opcode[0] & 0b11110000) == 0b01010000): //SUB
+                case ((opcode[0] & 0b11110011) == 0b01100000): //SL
+                case ((opcode[0] & 0b11110011) == 0b01100001): //SR
+                case ((opcode[0] & 0b11110011) == 0b01100010): //NEG
+                    this.Reg_File[Rd] = this.ALU(opcode, Rd, Rr);
+                    this.PC++;
+                    break;
+                case ((opcode[0] & 0b11110011) == 0b01100011): //LD
+                    this.Reg_File[Rd] = opcodes[1] & 0b11111111;
+                    this.PC++;
+                    break;
+                case ((opcode[0] & 0b11111111) == 0b10000000): //JMP
+                    this.PC = opcode[1];
+                    break;
+                case ((opcode[0] & 0b11110000) == 0b10010000): //JMP FLAGS
+                    switch (opcode[0] & 0b00001111) {
+                        case 0b1000:
+                            if (this.carry == 1) {
+                                this.PC = opcode[1];
+                            } else {
+                                this.PC++;
+                            }
+                            break;
+                        case 0b0100:
+                            if (this.neg == 1) {
+                                this.PC = opcode[1];
+                            } else {
+                                this.PC++;
+                            }
+                            break;
+                        case 0b0010:
+                            if (this.zero == 1) {
+                                this.PC = opcode[1];
+                            } else {
+                                this.PC++;
+                            }
+                            break;
+                        case 0b0001:
+                            if (this.over == 1) {
+                                this.PC = opcode[1];
+                            } else {
+                                this.PC++;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                    case (opcode[0] == 0b10100000): //Call
+                        this.savedAddress = this.PC+1;
+                        this.PC = opcode[1];
+                    case (opcode[0] == 0b10100001): //RET
+                        this.PC = this.savedAddress;
+                    case ((opcode[0] & 0b11110010) == 0b10100010): //PRT
+                        if ((opcode[0] & 0b00000001) == 1) {
+                            this.output.push(String.fromCharCode(this.Reg_File[Rd]));
+                        } else {
+                            this.output.push(this.Reg_File[Rd]);
+                        }
+                        this.PC++;
+                default:
+                    done = true;
+                    break;
+            }
+        }
+    }
+
 }
 
-function compiler(CPU, code) {
+function compiler(code) {
     let Full_Text = ((code).replaceAll(/,/g, " ")).toUpperCase(); // Gets textarea value and comma to space and all uppercase
     let lines = Full_Text.split(/\r?\n/); // Splits to array based on new line
 
 
     let words = [];
-	let labels = [];
-	let bad_alphabet = /[^a-z0-9,:_ ]/gi; // Anything not alphanumeric + comma + colon + space
-	let comment_char = '%';
+    let labels = [];
+    let bad_alphabet = /[^a-z0-9,:_ ]/gi; // Anything not alphanumeric + comma + colon + space
+    let comment_char = '%';
     for (let i = 0; i < lines.length; i++) {
-		// Remove tabs
-		lines[i] = lines[i].replaceAll(/\t/g, "");
+        // Remove tabs
+        lines[i] = lines[i].replaceAll(/\t/g, "");
 
-		// Allow comments, and skip  that line
-		if(lines[i][0] == comment_char){
-			continue;
-		}
+        // Allow comments, and skip  that line
+        if (lines[i][0] == comment_char) {
+            continue;
+        }
 
-		// Check for bad chars, log error, then return null
-		var bad_chars = lines[i].match(bad_alphabet);
-		if(bad_chars){
-			throw new Error("Invalid character '" + bad_chars[0] + "' on line " + (i+1));
-		}
+        // Check for bad chars, log error, then return null
+        var bad_chars = lines[i].match(bad_alphabet);
+        if (bad_chars) {
+            throw new Error("Invalid character '" + bad_chars[0] + "' on line " + (i + 1));
+        }
 
-		// Remove excess whitespace, then split args
-        let args = lines[i].replaceAll(/\s+/g,' ').split(" ");
+        // Remove excess whitespace, then split args
+        let args = lines[i].replaceAll(/\s+/g, ' ').split(" ");
 
-		// Skip empty lines
-		if(args.length == 0 || args[0] === ""){
-			continue;
-		}
+        // Skip empty lines
+        if (args.length == 0 || args[0] === "") {
+            continue;
+        }
 
-		// Check if valid label
-		var colon = args[0].match(/:/g);
-		if(colon){
-			if(colon.length > 1){
-				throw new Error("Invalid label \"" + args[0] + "\" on line " + (i+1));
-			}
+        // Check if valid label
+        var colon = args[0].match(/:/g);
+        if (colon) {
+            if (colon.length > 1) {
+                throw new Error("Invalid label \"" + args[0] + "\" on line " + (i + 1));
+            }
 
-			// Get label
-			var label = args[0].split(':', 1)[0]
-			if(label === ""){
-				throw new Error("Invalid empty label on line " + (i+1));
-			}
+            // Get label
+            var label = args[0].split(':', 1)[0]
+            if (label === "") {
+                throw new Error("Invalid empty label on line " + (i + 1));
+            }
 
-			// Add label location
-			labels[label] = words.length;
+            // Add label location
+            labels[label] = words.length;
 
-			continue;
-		}
+            continue;
+        }
 
-		// Add instruction to list
-		words.push(args)
+        // Add instruction to list
+        words.push(args)
     }
 
     //console.clear();
-	console.log(labels);
-    console.log(words);
+    //console.log(labels);
+    //console.log(words);
 
-	// Parse instruction list
+    // Parse instruction list
     let opcodes = [];
     for (let i = 0; i < words.length; i++) {
         let instruction = [];
 
-		// Set high 4 bits of instruction
+        // Set high 4 bits of instruction
         switch (words[i][0]) {
             case "BRK":
                 instruction[0] = 0b0000;
@@ -345,12 +280,12 @@ function compiler(CPU, code) {
             case "NOP":
                 instruction[0] = 0b1111;
                 break;
-            
+
             default:
-                throw new Error('Error on ' + (i+1) + ": " + words[i]);
+                throw new Error('Error on ' + (i + 1) + ": " + words[i]);
         }
 
-		// Parse first register argument, if necessary
+        // Parse first register argument, if necessary
         instruction[0] = instruction[0] << 2;
         switch (words[i][0]) {
             case "BRK":
@@ -361,8 +296,8 @@ function compiler(CPU, code) {
 				instruction[0] = instruction[0] | 0b00;
 				break;
             case "NOP":
-				instruction[0] = instruction[0] | 0b11;
-				break;
+                instruction[0] = instruction[0] | 0b11;
+                break;
             case "AND":
             case "OR":
             case "XOR":
@@ -378,25 +313,25 @@ function compiler(CPU, code) {
             case "BRG":
             case "BRL":
             case "SAV":
-				// Check if enough arguments are present
-				if(words[i].length < 2){
-	                throw new Error("Missing argument on line " + (i+1) + ": " + words[i]);
-				}
+                // Check if enough arguments are present
+                if (words[i].length < 2) {
+                    throw new Error("Missing argument on line " + (i + 1) + ": " + words[i]);
+                }
 
-				// Parse register
-				let rd = words[i][1].match(/^R([0-3])$/);
-				if(!rd){
-					throw new Error("Invalid register '" + words[i][1] + "' on line" + (i+1) + ": " + words[i]);
-				}
+                // Parse register
+                let rd = words[i][1].match(/^R([0-3])$/);
+                if (!rd) {
+                    throw new Error("Invalid register '" + words[i][1] + "' on line" + (i + 1) + ": " + words[i]);
+                }
 
-				// Set register bits
-				instruction[0] = instruction[0] | parseInt(rd[1]);
-				break;
+                // Set register bits
+                instruction[0] = instruction[0] | parseInt(rd[1]);
+                break;
             default:
-                throw new Error('Error on line ' + (i+1) + ": " + words[i]);
+                throw new Error('Error on line ' + (i + 1) + ": " + words[i]);
         }
 
-		// Parse second argument, if necessary
+        // Parse second argument, if necessary
         instruction[0] = instruction[0] << 2;
         switch (words[i][0]) {
             case "BRK":
@@ -449,56 +384,57 @@ function compiler(CPU, code) {
             case "BRG":
             case "BRL":
             case "SAV":
-				// Check if enough arguments are present
-				if(words[i].length < 3){
-	                throw new Error("Missing argument on line" + (i+1) + ": " + words[i]);
-				}
+                // Check if enough arguments are present
+                if (words[i].length < 3) {
+                    throw new Error("Missing argument on line" + (i + 1) + ": " + words[i]);
+                }
 
-				// Parse register
-				let rr = words[i][2].match(/^R([0-3])$/);
-				if(!rr){
-					throw new Error("Invalid register '" + words[i][2] + "' on line" + (i+1) + ": " + words[i]);
-				}
+                // Parse register
+                let rr = words[i][2].match(/^R([0-3])$/);
+                if (!rr) {
+                    throw new Error("Invalid register '" + words[i][2] + "' on line" + (i + 1) + ": " + words[i]);
+                }
 
-				// Set register bits
-				instruction[0] = instruction[0] | parseInt(rr[1]);
-				break;
+                // Set register bits
+                instruction[0] = instruction[0] | parseInt(rr[1]);
+                break;
             default:
-                throw new Error('Error on line ' + (i+1) + ": " + words[i]);
+                throw new Error('Error on line ' + (i + 1) + ": " + words[i]);
         }
 
         switch (words[i][0]) {
             case "JMP":
             case "CALL":
                 if (words[i][1] === undefined) {
-                    throw new Error('Error on line ' + (i+1) + ": " + words[i]);
+                    throw new Error('Error on line ' + (i + 1) + ": " + words[i]);
                 }
 
-				if(labels[words[i][1]] === undefined){
-					throw new Error('Label "' + words[i][1] + '" on line ' + (i+1) + " not found.");
-				}
+                if (labels[words[i][1]] === undefined) {
+                    throw new Error('Label "' + words[i][1] + '" on line ' + (i + 1) + " not found.");
+                }
 
                 instruction[1] = labels[words[i][1]];
                 break;
-			case "BRQ":
-			case "BRG":
-			case "BRL":
+            case "BRQ":
+            case "BRG":
+            case "BRL":
                 if (words[i][3] === undefined) {
-                    throw new Error('Error on line ' + (i+1) + ": " + words[i]);
+                    throw new Error('Error on line ' + (i + 1) + ": " + words[i]);
                 }
 
-				if(labels[words[i][3]] === undefined){
-					throw new Error('Label "' + words[i][3] + '" on line ' + (i+1) + " not found.");
-				}
+                if (labels[words[i][3]] === undefined) {
+                    throw new Error('Label "' + words[i][3] + '" on line ' + (i + 1) + " not found.");
+                }
 
                 instruction[1] = labels[words[i][3]];
                 break;
         }
 
-        console.log(words[i][0] + " " + instruction[0].toString(2) + " " + instruction[1]);
+        //console.log(words[i][0] + " " + instruction[0].toString(2) + " " + instruction[1]);
+        opcodes.push(instruction);
     }
 
-    return words;
+    return opcodes;
 }
 
 document.getElementById("myBtn").onclick = function () {
@@ -506,10 +442,20 @@ document.getElementById("myBtn").onclick = function () {
     let processor = new CPU();
     let code = document.getElementById("textarea").value;
     try {
-        let text = compiler(processor, code);
+        let text = compiler(code);
+        console.log(text);
+        let test = Array();
+        test.push('1');
+        test.push('2');
+        test.push(' ');
+        test.push('\n');
+        test.push('3');
+        test.push('4');
+        console.log(test.join(""));
+        document.getElementById("textarea2").value = test.join("");
     } catch (e) {
         document.getElementById("textarea2").value = e.message;
-		console.log(e.stack);
+        //console.log(e.stack);
     }
 
 
