@@ -358,6 +358,8 @@ function compiler(CPU, code) {
             case "JPF":
             case "CALL":
             case "RET":
+				instruction[0] = instruction[0] | 0b00;
+				break;
             case "NOP":
 				instruction[0] = instruction[0] | 0b11;
 				break;
@@ -398,20 +400,25 @@ function compiler(CPU, code) {
         instruction[0] = instruction[0] << 2;
         switch (words[i][0]) {
             case "BRK":
-			case "NEG":
 			case "JMP":
 			case "JPF":
 			case "CALL":
+				instruction[0] = instruction[0] | 0b00;
+				break;
 			case "RET":
+				instruction[0] = instruction[0] | 0b01;
+				break;
+			case "NEG":
+				instruction[0] = instruction[0] | 0b10;
+				break;
 			case "NOP":
+				instruction[0] = instruction[0] | 0b11;
 				break;
 			case "PRT":
 				if(words[i].length < 3){
 	                throw new Error("Missing argument on line " + (i+1) + ": " + words[i]);
 				}
-				instruction[0] = instruction[0] | 0b10;
-
-				instruction[1] = words[i][2][0]; // Only take single character for type argument
+				instruction[0] |= (words[i][2][0] === "1") ? 0b11 : 0b10; // Only take single character for type argument
 				break;
 			case "SL":
 			case "SR":
@@ -421,6 +428,16 @@ function compiler(CPU, code) {
 				}
 
 				instruction[1] = parseInt(words[i][2]);
+
+				// Set bits for each
+				if(words[i][0] == "SL"){
+					instruction[0] = instruction[0] | 0b00;
+				}else if(words[i][0] == "SR"){
+					instruction[0] = instruction[0] | 0b01;
+				}else if(words[i][0] == "LD"){
+					instruction[0] = instruction[0] | 0b11;
+				}
+
 				break;
             case "AND":
             case "OR":
