@@ -31,39 +31,39 @@ class CPU {
         switch (true) {
             case ((opcode[0] & 0b11110000) == 0b00010000): //AND
                 res = this.Reg_File[Rd] & this.Reg_File[Rr];
-                console.log("AND");
+                // //console.log("AND");
                 break;
             case ((opcode[0] & 0b11110000) == 0b00100000): //OR
                 res = this.Reg_File[Rd] | this.Reg_File[Rr];
-                console.log("OR");
+                 //console.log("OR");
                 break;
             case ((opcode[0] & 0b11110000) == 0b00110000): //XOR
                 res = this.Reg_File[Rd] ^ this.Reg_File[Rr];
-                console.log("XOR");
+                 //console.log("XOR");
                 break;
             case ((opcode[0] & 0b11110000) == 0b01000000): //ADD
                 res = this.Reg_File[Rd] + this.Reg_File[Rr];
-                console.log("ADD");
+                 //console.log("ADD");
                 break;
             case ((opcode[0] & 0b11110000) == 0b01010000): //SUB
                 res = this.Reg_File[Rd] - this.Reg_File[Rr];
-                console.log("SUB");
+                 //console.log("SUB");
                 break;
             case ((opcode[0] & 0b11110011) == 0b01100000): //SL
                 res = this.Reg_File[Rd] << opcode[1];
-                console.log("SL");
+                 //console.log("SL");
                 break;
             case ((opcode[0] & 0b11110011) == 0b01100001): //SR
                 res = this.Reg_File[Rd] >> opcode[1];
-                console.log("SR");
+                 //console.log("SR");
                 break;
             case ((opcode[0] & 0b11110011) == 0b01100010): //NEG
                 res = ~this.Reg_File[Rd];
-                console.log("NEG");
+                 //console.log("NEG");
                 break;
         }
 
-        console.log("RESULT: "+res);
+         //console.log("RESULT: "+res);
         if (res == 0) {
             this.zero = 1;
         }
@@ -78,7 +78,7 @@ class CPU {
         if ((((res).toString(2)).padStart(8, "0")[0]) == 1) { //If the MSB is a one
             this.neg = 1;
         }
-        console.log("RESULT: "+res);
+         //console.log("RESULT: "+res);
         return res;
     }
 
@@ -87,11 +87,11 @@ class CPU {
         this.cycles = 0;
         while (!done) {
             let opcode = opcodes[this.PC];
-            console.log(opcode);
+             //console.log(opcode);
             let Rd = (opcode[0] & 0b00001100) >> 2; //Grabs bit 3 and 2
             let Rr = (opcode[0] & 0b00000011); //Grabs bit 1 and 0
-            console.log(Rd);
-            console.log(Rr);
+             //console.log(Rd);
+             //console.log(Rr);
             
             switch (true) {
                 case (opcode[0] == 0b00000000):
@@ -111,11 +111,11 @@ class CPU {
                 case ((opcode[0] & 0b11110011) == 0b01100011): //LD
                     this.Reg_File[Rd] = opcode[1] & 0b11111111;
                     this.PC++;
-                    console.log("LD");
+                     //console.log("LD");
                     break;
                 case ((opcode[0] & 0b11111111) == 0b10000000): //JMP
                     this.PC = opcode[1];
-                    console.log("JMP");
+                     //console.log("JMP");
                     break;
                 case ((opcode[0] & 0b11110000) == 0b10010000): //JMP FLAGS
                     switch (opcode[0] & 0b00001111) {
@@ -125,7 +125,7 @@ class CPU {
                             } else {
                                 this.PC++;
                             }
-                            console.log("FLAG CARRY");
+                             //console.log("FLAG CARRY");
                             break;
                         case 0b0100:
                             if (this.neg == 1) {
@@ -133,7 +133,7 @@ class CPU {
                             } else {
                                 this.PC++;
                             }
-                            console.log("FLAG NEG");
+                             //console.log("FLAG NEG");
                             break;
                         case 0b0010:
                             if (this.zero == 1) {
@@ -141,7 +141,7 @@ class CPU {
                             } else {
                                 this.PC++;
                             }
-                            console.log("FLAG ZERO");
+                             //console.log("FLAG ZERO");
                             break;
                         case 0b0001:
                             if (this.over == 1) {
@@ -149,7 +149,7 @@ class CPU {
                             } else {
                                 this.PC++;
                             }
-                            console.log("FLAG OVER");
+                             //console.log("FLAG OVER");
                             break;
                         default:
                             break;
@@ -157,11 +157,11 @@ class CPU {
                     case (opcode[0] == 0b10100000): //Call
                         this.savedAddress = this.PC;
                         this.PC = opcode[1];
-                        console.log("CALL");
+                         //console.log("CALL");
                         break;
                     case (opcode[0] == 0b10100001): //RET
                         this.PC = this.savedAddress+1;
-                        console.log("RET");
+                         //console.log("RET");
                         break;
                     case ((opcode[0] & 0b11110010) == 0b10100010): //PRT
                         if ((opcode[0] & 0b00000001) == 1) {
@@ -171,58 +171,58 @@ class CPU {
                             this.output.push(this.Reg_File[Rd]);
                         }
                         this.PC++;
-                        console.log("PRT");
+                         //console.log("PRT");
                         break;
                     case ((opcode[0] & 0b11110000) == 0b10110000): //BRQ
                         if (this.Reg_File[Rd] == this.Reg_File[Rr]) {
                             this.PC = opcode[1];
-                            console.log("BRQ True");
+                             //console.log("BRQ True");
                         } else {
-                            console.log("BRQ False");
+                             //console.log("BRQ False");
                             this.PC++;
                         }
                         break;
                     case ((opcode[0] & 0b11110000) == 0b11000000): //BRG
                         if (this.Reg_File[Rd] > this.Reg_File[Rr]) {
                             this.PC = opcode[1];
-                            console.log("BRG True");
+                             //console.log("BRG True");
                         } else {
-                            console.log("BRG False");
+                             //console.log("BRG False");
                             this.PC++;
                         }
                         break;
                     case ((opcode[0] & 0b11110000) == 0b11010000): //BRL
                         if (this.Reg_File[Rd] < this.Reg_File[Rr]) {
                             this.PC = opcode[1];
-                            console.log("BRL True");
+                             //console.log("BRL True");
                         } else {
-                            console.log("BRL False");
+                             //console.log("BRL False");
                             this.PC++;
                         }
                         break;
                     case ((opcode[0] & 0b11110000) == 0b01110000): //RD
                         this.Reg_File[Rd] = this.SRAM[this.Reg_File[Rr]];
                         this.PC++;
-                        console.log("RD");
+                         //console.log("RD");
                         break;
                     case ((opcode[0] & 0b11110000) == 0b011100000): //SAV
                         this.SRAM[this.Reg_File[Rd]] = this.Reg_File[Rr];
                         this.PC++;
-                        console.log("SAV");
+                         //console.log("SAV");
                         break;
                     case (opcode[0] == 0b11111111): //NOP
                         this.SRAM[Rd] = this.Reg_File[Rr];
                         this.PC++;
-                        console.log("NOP");
+                         //console.log("NOP");
                         break;
                 default:
                     done = true;
                     this.output.push("UNKNOWN INSTRUCTION");
                     break;
             }
-            console.log(this.Reg_File);
-            console.log("PC IS: "+this.PC);
-            console.log("RETURN ADDRESS: "+this.savedAddress);
+             //console.log(this.Reg_File);
+             //console.log("PC IS: "+this.PC);
+             //console.log("RETURN ADDRESS: "+this.savedAddress);
             this.cycles+=1;
             document.getElementById("cycles").innerHTML = this.cycles;
         }
@@ -240,7 +240,7 @@ function compiler(code) {
     for (let i = 0; i < lines.length; i++){
         lines[i].trimStart();
     }
-    console.log(lines);
+    // //console.log(lines);
 
     let words = [];
     let labels = [];
@@ -293,8 +293,8 @@ function compiler(code) {
     }
 
     //console.clear();
-    //console.log(labels);
-    //console.log(words);
+    // //console.log(labels);
+    // //console.log(words);
 
     // Parse instruction list
     let opcodes = [];
@@ -510,7 +510,7 @@ function compiler(code) {
                 break;
         }
 
-        //console.log(words[i][0] + " " + instruction[0].toString(2) + " " + instruction[1]);
+        // //console.log(words[i][0] + " " + instruction[0].toString(2) + " " + instruction[1]);
         opcodes.push(instruction);
     }
 
@@ -526,12 +526,12 @@ document.getElementById("runBtn").onclick = function () {
         let opcodes = compiler(code);
         let output = processor.Control_Logic(opcodes);
         
-        console.log(opcodes);
+        // //console.log(opcodes);
 
         document.getElementById("textarea2").value = output.join("");
     } catch (e) {
         document.getElementById("textarea2").value = e.message;
-        //console.log(e.stack);
+        // //console.log(e.stack);
     }
 
 }
