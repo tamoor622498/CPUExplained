@@ -14,6 +14,7 @@ class CPU {
         this.over = 0;
         this.SRAM = Array(255).fill(0);
         this.output = Array();
+        this.cycles = 0;
     }
 
     ALU(opcode, Rd, Rr) {
@@ -83,6 +84,7 @@ class CPU {
 
     Control_Logic(opcodes) {
         let done = false;
+        this.cycles = 0;
         while (!done) {
             let opcode = opcodes[this.PC];
             console.log(opcode);
@@ -221,6 +223,8 @@ class CPU {
             console.log(this.Reg_File);
             console.log("PC IS: "+this.PC);
             console.log("RETURN ADDRESS: "+this.savedAddress);
+            this.cycles+=1;
+            document.getElementById("cycles").innerHTML = this.cycles;
         }
 
         return this.output;
