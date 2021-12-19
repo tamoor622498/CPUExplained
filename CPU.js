@@ -224,8 +224,8 @@ class CPU {
              //console.log("PC IS: "+this.PC);
              //console.log("RETURN ADDRESS: "+this.savedAddress);
             this.cycles+=1;
-            document.getElementById("cycles").innerHTML = this.cycles;
         }
+        document.getElementById("cycles").innerHTML = this.cycles;
 
         return this.output;
     }
