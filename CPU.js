@@ -233,6 +233,12 @@ function compiler(code) {
     let lines = Full_Text.split(/\r?\n/); // Splits to array based on new line
 
 
+
+    for (let i = 0; i < lines.length; i++){
+        lines[i].trimStart();
+    }
+    console.log(lines);
+
     let words = [];
     let labels = [];
     let bad_alphabet = /[^a-z0-9,:_ ]/gi; // Anything not alphanumeric + comma + colon + space
@@ -527,6 +533,7 @@ document.getElementById("runBtn").onclick = function () {
 
 }
 
+//Loads arithmatic program
 document.getElementById("arithBtn").onclick = function () {
     document.getElementById("textarea").value = `
 % One plus one
@@ -572,32 +579,37 @@ BRK
     `;
 }
 
-document.getElementById("colBtn").onclick = function () {
-    document.getElementById("textarea").value = `%Program runs collatz for initial number
-LD R0, 9
-LD R1, 1
-PRT R0, N
-
-% Main loop (R1 contains number n)
-loop_start:
+//Loads counting program
+document.getElementById("countBtn").onclick = function () {
+    document.getElementById("textarea").value = `% Counting Program
+%R0 is value to count to (max is 255)
+%R1 is starting value
+%R2 is value is interate by
+LD R0, 10
+LD R1, 0
 LD R2, 1
-AND R2, R0
-BRQ R1, R2, odd
-even:
-% n/2
-SR R0, 1
-JMP loop_condition
-odd:
-% 3n + 1
-LD R3, 0
-ADD R3, R0
-ADD R3, R0
-ADD R3, R0
-ADD R3, R1
-loop_condition:
-PRT R0, N
-BRG R0, R1, loop_start
-% End of program
-BRK	
+PRT R1, N
+loop_start:
+\tADD R1, R2
+\tPRT R1, N
+\tBRL R1, R0, loop_start
+BRK
     `;
 }
+
+// Allows Tabs in programming area
+document.getElementById('textarea').addEventListener('keydown', function(e) {
+    if (e.key == 'Tab') {
+      e.preventDefault();
+      var start = this.selectionStart;
+      var end = this.selectionEnd;
+  
+      // set textarea value to: text before caret + tab + text after caret
+      this.value = this.value.substring(0, start) +
+        "\t" + this.value.substring(end);
+  
+      // put caret at right position again
+      this.selectionStart =
+        this.selectionEnd = start + 1;
+    }
+  });
