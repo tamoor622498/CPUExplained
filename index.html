@@ -15,6 +15,9 @@ LD R1, 1
 
 PRT R0, N
 
+LD R2, 65
+PRT R2, A
+
 % Main loop (R1 contains number n)
 loop_start:
 	LD R2, 1
@@ -23,7 +26,7 @@ loop_start:
 	BRQ R1, R2, odd
 	even:
 		% n/2
-		SR R0, 2
+		SR R0, 1
 		JMP loop_condition
 	odd:
 		% 3n + 1

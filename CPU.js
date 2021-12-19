@@ -78,10 +78,13 @@ class CPU {
         let done = false;
         while (!done) {
             let opcode = opcodes[this.PC];
+            console.log(opcode);
             let Rd = (opcode[0] & 0b00001100) >> 2; //Grabs bit 3 and 2
             let Rr = (opcode[0] & 0b00000011); //Grabs bit 1 and 0
-
-            switch (opcode[0]) {
+            console.log(Rd);
+            console.log(Rr);
+            
+            switch (true) {
                 case (opcode[0] == 0b00000000):
                     done = true;
                     break;
@@ -97,8 +100,8 @@ class CPU {
                     this.PC++;
                     break;
                 case ((opcode[0] & 0b11110011) == 0b01100011): //LD
-                    this.Reg_File[Rd] = opcodes[1] & 0b11111111;
-                    this.PC++;
+                    this.Reg_File[Rd] = opcode[1] & 0b11111111;
+                    this.PC++;;
                     break;
                 case ((opcode[0] & 0b11111111) == 0b10000000): //JMP
                     this.PC = opcode[1];
@@ -144,17 +147,56 @@ class CPU {
                     case ((opcode[0] & 0b11110010) == 0b10100010): //PRT
                         if ((opcode[0] & 0b00000001) == 1) {
                             this.output.push(String.fromCharCode(this.Reg_File[Rd]));
+                            
                         } else {
                             this.output.push(this.Reg_File[Rd]);
                         }
+                        console.log(String.fromCharCode(65) + " THIS");
                         this.PC++;
+                        break;
+                    case ((opcode[0] & 0b11110000) == 0b10110000): //BRQ
+                        if (this.Reg_File[Rd] == this.Reg_File[Rr]) {
+                            this.PC = opcode[1];
+                        } else {
+                            this.PC++;
+                        }
+                        break;
+                    case ((opcode[0] & 0b11110000) == 0b11000000): //BRG
+                        if (this.Reg_File[Rd] > this.Reg_File[Rr]) {
+                            this.PC = opcode[1];
+                        } else {
+                            this.PC++;
+                        }
+                        break;
+                    case ((opcode[0] & 0b11110000) == 0b11010000): //BRL
+                        if (this.Reg_File[Rd] < this.Reg_File[Rr]) {
+                            this.PC = opcode[1];
+                        } else {
+                            this.PC++;
+                        }
+                        break;
+                    case ((opcode[0] & 0b11110000) == 0b01110000): //RD
+                        this.Reg_File[Rd] = this.SRAM[Rr];
+                        this.PC++;
+                        break;
+                    case ((opcode[0] & 0b11110000) == 0b01110000): //WR
+                        this.SRAM[Rd] = this.Reg_File[Rr];
+                        this.PC++;
+                        break;
+                    case (opcode[0] == 0b11111111): //NOP
+                        this.SRAM[Rd] = this.Reg_File[Rr];
+                        this.PC++;
+                        break;
                 default:
                     done = true;
+                    this.output.push("UNKNOWN INSTRUCTION");
                     break;
             }
+            console.log(this.Reg_File);
         }
-    }
 
+        return this.output;
+    }
 }
 
 function compiler(code) {
@@ -439,20 +481,16 @@ function compiler(code) {
 
 document.getElementById("myBtn").onclick = function () {
     document.getElementById("textarea2").value = ""; //Textarea cleared
+    console.clear()
     let processor = new CPU();
     let code = document.getElementById("textarea").value;
     try {
-        let text = compiler(code);
-        console.log(text);
-        let test = Array();
-        test.push('1');
-        test.push('2');
-        test.push(' ');
-        test.push('\n');
-        test.push('3');
-        test.push('4');
-        console.log(test.join(""));
-        document.getElementById("textarea2").value = test.join("");
+        let opcodes = compiler(code);
+        let output = processor.Control_Logic(opcodes);
+
+        console.log(opcodes);
+
+        document.getElementById("textarea2").value = output.join("");
     } catch (e) {
         document.getElementById("textarea2").value = e.message;
         //console.log(e.stack);
