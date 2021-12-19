@@ -7,16 +7,12 @@ class CPU {
         this.regB = 0x00;
         this.savedAddress = 0;
         this.Reg_File = [0, 0, 0, 0];
-        //this.IM = new Instruction_Memory();
         this.PC = 0;
         this.carry = 0;
         this.neg = 0;
         this.zero = 0;
         this.over = 0;
-        this.SRAM = Array(255);
-        for (let i = 0; i < this.SRAM.length; i++) {
-            this.SRAM[i] = 0;
-        }
+        this.SRAM = Array(255).fill(0);
         this.output = Array();
     }
 
@@ -157,12 +153,14 @@ class CPU {
                             break;
                     }
                     case (opcode[0] == 0b10100000): //Call
-                        this.savedAddress = this.PC+1;
+                        this.savedAddress = this.PC;
                         this.PC = opcode[1];
                         console.log("CALL");
+                        break;
                     case (opcode[0] == 0b10100001): //RET
-                        this.PC = this.savedAddress;
+                        this.PC = this.savedAddress+1;
                         console.log("RET");
+                        break;
                     case ((opcode[0] & 0b11110010) == 0b10100010): //PRT
                         if ((opcode[0] & 0b00000001) == 1) {
                             this.output.push(String.fromCharCode(this.Reg_File[Rd]));
@@ -201,14 +199,14 @@ class CPU {
                         }
                         break;
                     case ((opcode[0] & 0b11110000) == 0b01110000): //RD
-                        this.Reg_File[Rd] = this.SRAM[Rr];
+                        this.Reg_File[Rd] = this.SRAM[this.Reg_File[Rr]];
                         this.PC++;
                         console.log("RD");
                         break;
-                    case ((opcode[0] & 0b11110000) == 0b01110000): //WR
-                        this.SRAM[Rd] = this.Reg_File[Rr];
+                    case ((opcode[0] & 0b11110000) == 0b011100000): //SAV
+                        this.SRAM[this.Reg_File[Rd]] = this.Reg_File[Rr];
                         this.PC++;
-                        console.log("WR");
+                        console.log("SAV");
                         break;
                     case (opcode[0] == 0b11111111): //NOP
                         this.SRAM[Rd] = this.Reg_File[Rr];
@@ -222,6 +220,7 @@ class CPU {
             }
             console.log(this.Reg_File);
             console.log("PC IS: "+this.PC);
+            console.log("RETURN ADDRESS: "+this.savedAddress);
         }
 
         return this.output;
@@ -525,7 +524,7 @@ document.getElementById("runBtn").onclick = function () {
         
         console.log(opcodes);
 
-        document.getElementById("textarea2").value = output.join("\n");
+        document.getElementById("textarea2").value = output.join("");
     } catch (e) {
         document.getElementById("textarea2").value = e.message;
         //console.log(e.stack);
@@ -535,45 +534,60 @@ document.getElementById("runBtn").onclick = function () {
 
 //Loads arithmatic program
 document.getElementById("arithBtn").onclick = function () {
-    document.getElementById("textarea").value = `
-% One plus one
+    document.getElementById("textarea").value = `% One plus one
 LD R0, 1
 LD R1, 1
 ADD R0, R1
 PRT R0, N
+LD R3, 10
+PRT R3, A
 
 % two (from last instruction) sub one
 LD R1, 1
 SUB R0, R1
 PRT R0, N
+LD R3, 10
+PRT R3, A
 
 % Shifts R0 (1) to the left by 2
 SL R0, 2
 PRT R0, N
+LD R3, 10
+PRT R3, A
 
 % Shifts R0 (4) to the right by 1
 SR R0, 1
 PRT R0, N
+LD R3, 10
+PRT R3, A
 
 %2's complement negative of 2 in decimal
 NEG R0
 PRT R0, N
+LD R3, 10
+PRT R3, A
 
 %OR 253 and 255
 LD R0, 255
 OR R0, R1
 PRT R0, N
+LD R3, 10
+PRT R3, A
 
 %AND 15 and 255
 LD R1, 15
 AND R0, R1
 PRT R0, N
+LD R3, 10
+PRT R3, A
 
 %XOR 15 and 240
 LD R1, 15
 LD R0, 240
 XOR R0, R1
 PRT R0, N
+LD R3, 10
+PRT R3, A
 
 BRK
     `;
@@ -589,11 +603,62 @@ LD R0, 10
 LD R1, 0
 LD R2, 1
 PRT R1, N
+LD R3, 10
+PRT R3, A
 loop_start:
 \tADD R1, R2
 \tPRT R1, N
+\tLD R3, 10
+\tPRT R3, A
 \tBRL R1, R0, loop_start
 BRK
+    `;
+}
+
+//Loads counting program
+document.getElementById("funcBtn").onclick = function () {
+    document.getElementById("textarea").value = `% Calls number function in order and returns
+CALL one
+CALL two
+CALL three
+CALL four
+CALL five
+BRK
+
+four:
+\tLD R0, 4
+\tPRT R0, N
+\tLD R3, 10
+\tPRT R3, A
+\tRET
+
+five:
+\tLD R0, 5
+\tPRT R0, N
+\tLD R3, 10
+\tPRT R3, A
+\tRET
+
+two:
+\tLD R0, 2
+\tPRT R0, N
+\tLD R3, 10
+\tPRT R3, A
+\tRET
+
+three:
+\tLD R0, 3
+\tPRT R0, N
+\tLD R3, 10
+\tPRT R3, A
+\tRET  
+    
+one:
+\tLD R0, 1
+\tPRT R0, N
+\tLD R3, 10
+\tPRT R3, A
+\tRET
     `;
 }
 
