@@ -8,43 +8,28 @@
 <body>
 
 <div><textarea id="textarea" name="w3review" rows="20" cols="50">
-% Program runs collatz for initial number
-LD R0, 9
-
-LD R1, 1
-
-PRT R0, N
-
-LD R2, 65
-PRT R2, A
-
-% Main loop (R1 contains number n)
-loop_start:
-	LD R2, 1
-	AND R2, R0
-
-	BRQ R1, R2, odd
-	even:
-		% n/2
-		SR R0, 1
-		JMP loop_condition
-	odd:
-		% 3n + 1
-		ADD R0, R0
-		ADD R0, R0
-		ADD R0, R1
-
-	loop_condition:
-		PRT R0, N
-		BRG R0, R1, loop_start
-
-% End of program
+LD R0, 2
+LD R1, 3
+LD R2, 5
+LD R3, 10
+jmp test
+BRL R0, R1, true
+PRT R1, N
+BRK
+true:
+	PRT R2, N
+BRK
+test:
+	PRT R3, N
 BRK
 </textarea>
 </div>
-<button id="myBtn" type="button">Run</button>
+<button id="runBtn" type="button">Run</button>
 <div><textarea id="textarea2" name="w3review" rows="20" cols="50"></textarea>
 </div>
+
+<button id="arithBtn" type="button">Arithmatic Program</button>
+<button id="colBtn" type="button">Collatz Conjecture</button>
 
 </body>
 <script src="CPU.js"></script>

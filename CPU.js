@@ -28,39 +28,49 @@ class CPU {
         this.over = 0;
 
         //holds result
-        let res;
+        let res = 0;
 
         //Operation
-        switch (opcode) {
+        switch (true) {
             case ((opcode[0] & 0b11110000) == 0b00010000): //AND
                 res = this.Reg_File[Rd] & this.Reg_File[Rr];
+                console.log("AND");
                 break;
             case ((opcode[0] & 0b11110000) == 0b00100000): //OR
                 res = this.Reg_File[Rd] | this.Reg_File[Rr];
+                console.log("OR");
                 break;
             case ((opcode[0] & 0b11110000) == 0b00110000): //XOR
                 res = this.Reg_File[Rd] ^ this.Reg_File[Rr];
+                console.log("XOR");
                 break;
             case ((opcode[0] & 0b11110000) == 0b01000000): //ADD
                 res = this.Reg_File[Rd] + this.Reg_File[Rr];
+                console.log("ADD");
                 break;
             case ((opcode[0] & 0b11110000) == 0b01010000): //SUB
                 res = this.Reg_File[Rd] - this.Reg_File[Rr];
+                console.log("SUB");
                 break;
             case ((opcode[0] & 0b11110011) == 0b01100000): //SL
-                res = this.Reg_File[Rd] >> opcode[1];
+                res = this.Reg_File[Rd] << opcode[1];
+                console.log("SL");
                 break;
             case ((opcode[0] & 0b11110011) == 0b01100001): //SR
-                res = this.Reg_File[Rd] << opcode[1];
+                res = this.Reg_File[Rd] >> opcode[1];
+                console.log("SR");
                 break;
             case ((opcode[0] & 0b11110011) == 0b01100010): //NEG
                 res = ~this.Reg_File[Rd];
+                console.log("NEG");
                 break;
         }
 
-        if (res = 0) {
+        console.log("RESULT: "+res);
+        if (res == 0) {
             this.zero = 1;
         }
+        
         if (res > 255) { //Number greater than 0b11111111
             this.over = 1;
             this.carry = 1;
@@ -71,6 +81,7 @@ class CPU {
         if ((((res).toString(2)).padStart(8, "0")[0]) == 1) { //If the MSB is a one
             this.neg = 1;
         }
+        console.log("RESULT: "+res);
         return res;
     }
 
@@ -101,10 +112,12 @@ class CPU {
                     break;
                 case ((opcode[0] & 0b11110011) == 0b01100011): //LD
                     this.Reg_File[Rd] = opcode[1] & 0b11111111;
-                    this.PC++;;
+                    this.PC++;
+                    console.log("LD");
                     break;
                 case ((opcode[0] & 0b11111111) == 0b10000000): //JMP
                     this.PC = opcode[1];
+                    console.log("JMP");
                     break;
                 case ((opcode[0] & 0b11110000) == 0b10010000): //JMP FLAGS
                     switch (opcode[0] & 0b00001111) {
@@ -114,6 +127,7 @@ class CPU {
                             } else {
                                 this.PC++;
                             }
+                            console.log("FLAG CARRY");
                             break;
                         case 0b0100:
                             if (this.neg == 1) {
@@ -121,6 +135,7 @@ class CPU {
                             } else {
                                 this.PC++;
                             }
+                            console.log("FLAG NEG");
                             break;
                         case 0b0010:
                             if (this.zero == 1) {
@@ -128,6 +143,7 @@ class CPU {
                             } else {
                                 this.PC++;
                             }
+                            console.log("FLAG ZERO");
                             break;
                         case 0b0001:
                             if (this.over == 1) {
@@ -135,6 +151,7 @@ class CPU {
                             } else {
                                 this.PC++;
                             }
+                            console.log("FLAG OVER");
                             break;
                         default:
                             break;
@@ -142,8 +159,10 @@ class CPU {
                     case (opcode[0] == 0b10100000): //Call
                         this.savedAddress = this.PC+1;
                         this.PC = opcode[1];
+                        console.log("CALL");
                     case (opcode[0] == 0b10100001): //RET
                         this.PC = this.savedAddress;
+                        console.log("RET");
                     case ((opcode[0] & 0b11110010) == 0b10100010): //PRT
                         if ((opcode[0] & 0b00000001) == 1) {
                             this.output.push(String.fromCharCode(this.Reg_File[Rd]));
@@ -151,41 +170,50 @@ class CPU {
                         } else {
                             this.output.push(this.Reg_File[Rd]);
                         }
-                        console.log(String.fromCharCode(65) + " THIS");
                         this.PC++;
+                        console.log("PRT");
                         break;
                     case ((opcode[0] & 0b11110000) == 0b10110000): //BRQ
                         if (this.Reg_File[Rd] == this.Reg_File[Rr]) {
                             this.PC = opcode[1];
+                            console.log("BRQ True");
                         } else {
+                            console.log("BRQ False");
                             this.PC++;
                         }
                         break;
                     case ((opcode[0] & 0b11110000) == 0b11000000): //BRG
                         if (this.Reg_File[Rd] > this.Reg_File[Rr]) {
                             this.PC = opcode[1];
+                            console.log("BRG True");
                         } else {
+                            console.log("BRG False");
                             this.PC++;
                         }
                         break;
                     case ((opcode[0] & 0b11110000) == 0b11010000): //BRL
                         if (this.Reg_File[Rd] < this.Reg_File[Rr]) {
                             this.PC = opcode[1];
+                            console.log("BRL True");
                         } else {
+                            console.log("BRL False");
                             this.PC++;
                         }
                         break;
                     case ((opcode[0] & 0b11110000) == 0b01110000): //RD
                         this.Reg_File[Rd] = this.SRAM[Rr];
                         this.PC++;
+                        console.log("RD");
                         break;
                     case ((opcode[0] & 0b11110000) == 0b01110000): //WR
                         this.SRAM[Rd] = this.Reg_File[Rr];
                         this.PC++;
+                        console.log("WR");
                         break;
                     case (opcode[0] == 0b11111111): //NOP
                         this.SRAM[Rd] = this.Reg_File[Rr];
                         this.PC++;
+                        console.log("NOP");
                         break;
                 default:
                     done = true;
@@ -193,6 +221,7 @@ class CPU {
                     break;
             }
             console.log(this.Reg_File);
+            console.log("PC IS: "+this.PC);
         }
 
         return this.output;
@@ -395,7 +424,7 @@ function compiler(code) {
 				if(words[i].length < 3){
 	                throw new Error("Missing argument on line " + (i+1) + ": " + words[i]);
 				}
-				instruction[0] |= (words[i][2][0] === "1") ? 0b11 : 0b10; // Only take single character for type argument
+				instruction[0] |= (words[i][2][0] === "A") ? 0b11 : 0b10; // Only take single character for type argument
 				break;
 			case "SL":
 			case "SR":
@@ -479,7 +508,7 @@ function compiler(code) {
     return opcodes;
 }
 
-document.getElementById("myBtn").onclick = function () {
+document.getElementById("runBtn").onclick = function () {
     document.getElementById("textarea2").value = ""; //Textarea cleared
     console.clear()
     let processor = new CPU();
@@ -487,22 +516,88 @@ document.getElementById("myBtn").onclick = function () {
     try {
         let opcodes = compiler(code);
         let output = processor.Control_Logic(opcodes);
-
+        
         console.log(opcodes);
 
-        document.getElementById("textarea2").value = output.join("");
+        document.getElementById("textarea2").value = output.join("\n");
     } catch (e) {
         document.getElementById("textarea2").value = e.message;
         //console.log(e.stack);
     }
 
+}
 
-    // for (let j = 0; j < text.length; j++) {
-    //     // if (words[j] !== "") {
-    //     document.getElementById("textarea2").value += "> " + text[j] + "\n";
-    //     //}
-    //
-    // }
+document.getElementById("arithBtn").onclick = function () {
+    document.getElementById("textarea").value = `
+% One plus one
+LD R0, 1
+LD R1, 1
+ADD R0, R1
+PRT R0, N
 
+% two (from last instruction) sub one
+LD R1, 1
+SUB R0, R1
+PRT R0, N
 
+% Shifts R0 (1) to the left by 2
+SL R0, 2
+PRT R0, N
+
+% Shifts R0 (4) to the right by 1
+SR R0, 1
+PRT R0, N
+
+%2's complement negative of 2 in decimal
+NEG R0
+PRT R0, N
+
+%OR 253 and 255
+LD R0, 255
+OR R0, R1
+PRT R0, N
+
+%AND 15 and 255
+LD R1, 15
+AND R0, R1
+PRT R0, N
+
+%XOR 15 and 240
+LD R1, 15
+LD R0, 240
+XOR R0, R1
+PRT R0, N
+
+BRK
+    `;
+}
+
+document.getElementById("colBtn").onclick = function () {
+    document.getElementById("textarea").value = `%Program runs collatz for initial number
+LD R0, 9
+LD R1, 1
+PRT R0, N
+
+% Main loop (R1 contains number n)
+loop_start:
+LD R2, 1
+AND R2, R0
+BRQ R1, R2, odd
+even:
+% n/2
+SR R0, 1
+JMP loop_condition
+odd:
+% 3n + 1
+LD R3, 0
+ADD R3, R0
+ADD R3, R0
+ADD R3, R0
+ADD R3, R1
+loop_condition:
+PRT R0, N
+BRG R0, R1, loop_start
+% End of program
+BRK	
+    `;
 }
